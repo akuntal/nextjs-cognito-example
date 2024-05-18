@@ -1,5 +1,8 @@
 'use client';
 import { handleSignUp } from '@/lib/cognitoAction';
+import { getErrorMessage } from '@/utils/get-error-message';
+import { signUp } from 'aws-amplify/auth';
+import { redirect, useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 
 export default function Signup() {
@@ -8,8 +11,10 @@ export default function Signup() {
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
 
+    const router = useRouter();
+
     // Handle the form submission
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault(); // Prevent the default form submission behavior
 
         // You can handle the submission logic here, such as sending data to a server
@@ -18,11 +23,30 @@ export default function Signup() {
         console.log('Phone:', phone);
         console.log('Password:', password);
 
-        handleSignUp(phone, name, password); 
+        // const data = await handleSignUp(phone, name, password); 
+        try {const { isSignUpComplete, userId, nextStep } = await signUp({
+            username: phone,
+            password,
+            options: {
+              userAttributes: {
+                name,
+              },
+              // optional
+              autoSignIn: true,
+            },
+          });
+          router.push("/auth/confirm-signup");
+
+        } catch (error) {
+          const errorMessage = getErrorMessage(error);
+          console.log(errorMessage);
+        }
+
     };
 
     return (
         <form onSubmit={handleSubmit}>
+            <h3>Signup Page</h3>
             <div>
                 <label htmlFor="name">Name:</label>
                 <input
